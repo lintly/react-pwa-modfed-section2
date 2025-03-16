@@ -1,11 +1,22 @@
-import SO from "./SO";
+import { useState } from "react";
 
-export default () => {
+import "./App.css";
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import MyComponentMain from "./exports/MyComponentMain";
 
-	return (
-		<div>
-			<h1>SO Section</h1>
-			<SO />
-		</div>
-	);
-};
+function App() {
+  const [count, setCount] = useState(0);
+  return (
+    <>
+      <LanguageSwitcher />
+      <br />
+      <MyComponentMain />
+      <br />
+      <button onClick={() => setCount((count) => count + 1)}>
+        count is {count}
+      </button>
+    </>
+  );
+}
+
+export default App;

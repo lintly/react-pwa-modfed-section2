@@ -1,47 +1,53 @@
 import { federation } from "@module-federation/vite";
 import react from "@vitejs/plugin-react";
-import { writeFileSync } from "fs";
-import { defineConfig, loadEnv } from "vite";
+import path from "path";
+import { defineConfig } from "vitest/config";
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const deps = require("./package.json").dependencies;
+
+// https://vite.dev/config/
 export default defineConfig(({ mode }) => {
-  const selfEnv = loadEnv(mode, process.cwd());
+  // Check if we're in test mode
+  const isTest = mode === "test";
+
   return {
-    server: {
-      fs: {
-        allow: [".", "../shared"],
+    plugins: [
+      react(),
+      // Only use federation plugin when not testing
+      ...(!isTest
+        ? [
+            federation({
+              name: "section2",
+              filename: "remoteEntry.js",
+              exposes: {
+                "./MyComponent": "./src/exports/MyComponentMain.tsx",
+              },
+              shared: {
+                react: { singleton: true, requiredVersion: deps.react },
+                "react-dom": {
+                  singleton: true,
+                  requiredVersion: deps["react-dom"],
+                },
+                i18next: {
+                  singleton: true,
+                  requiredVersion: deps.i18next,
+                },
+              },
+            }),
+          ]
+        : []),
+    ],
+    build: {
+      target: "esnext",
+    },
+    test: {
+      globals: true,
+      environment: "jsdom",
+      setupFiles: ["./vitest.setup.ts"],
+      deps: {
+        moduleDirectories: ["node_modules", path.resolve("../../packages")],
       },
     },
-    build: {
-      target: "chrome89",
-    },
-    plugins: [
-    //   {
-    //     name: "generate-environment",
-    //     options: function () {
-    //       console.info("selfEnv", selfEnv);
-    //       writeFileSync(
-    //         "./src/environment.ts",
-    //         `export default ${JSON.stringify(selfEnv, null, 2)};`
-    //       );
-    //     },
-    //   },
-      federation({
-        filename: "remoteEntry.js",
-        name: "soApp",
-        exposes: {
-          "./so-app": "./src/SO.tsx",
-        },
-        remotes: {},
-        shared: {
-          react: {
-            singleton: true,
-          },
-          "react/": {
-            singleton: true,
-          },
-        },
-      }),
-      react(),
-    ],
   };
 });
